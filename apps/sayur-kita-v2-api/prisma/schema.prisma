@@ -1,0 +1,83 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["sayurkita"]
+}
+
+model Users {
+  user_id       Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  role          String
+  refresh_token String?
+  access_token  String?
+  googleId      String?        @unique
+  created_at    DateTime       @default(now())
+  transactions  Transactions[]
+
+  @@schema("sayurkita")
+}
+
+model Products {
+  product_id       Int            @id @default(autoincrement())
+  name             String
+  category         String
+  price            Float
+  discounted_price Float          @default(0.0)
+  description      String
+  image            String?
+  stock            Int
+  created_at       DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  discounts        Discounts[]
+  transactions     Transactions[]
+
+  @@schema("sayurkita")
+}
+
+model Transactions {
+  transaction_id   Int      @id @default(autoincrement())
+  userId           Int
+  productId        Int
+  quantity         Int
+  total_price      Float
+  transaction_date DateTime @default(now())
+
+  user     Users     @relation(fields: [userId], references: [user_id])
+  product  Products  @relation(fields: [productId], references: [product_id])
+  Payments Payments?
+
+  @@schema("sayurkita")
+}
+
+model Payments {
+  payment_id     Int      @id @default(autoincrement())
+  transactionId  Int      @unique
+  payment_id_MT  String
+  payment_type   String
+  payment_status String
+  payment_amount Float
+  payment_date   DateTime @default(now())
+
+  transaction Transactions @relation(fields: [transactionId], references: [transaction_id])
+
+  @@schema("sayurkita")
+}
+
+model Discounts {
+  discount_id         Int      @id @default(autoincrement())
+  productId           Int
+  discount_percentage Float
+  start_date          DateTime
+  end_date            DateTime
+
+  product Products @relation(fields: [productId], references: [product_id])
+
+  @@schema("sayurkita")
+}
