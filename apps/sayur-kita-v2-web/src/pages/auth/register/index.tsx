@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import Swal from "sweetalert2";
 import axios from "axios";
 
@@ -15,7 +15,7 @@ function Register() {
     password: "",
   });
 
-  async function submitRegister(e: any) {
+  async function submitRegister(e: FormEvent) {
     e.preventDefault();
     try {
       const response = await axios.post("/api/auth/register", {
@@ -24,7 +24,7 @@ function Register() {
         password: credentials.password,
         role: "user",
       });
-      
+
       console.log(response);
       if (response) {
         Swal.fire({
@@ -51,6 +51,16 @@ function Register() {
     }
   }
 
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement>,
+    field: keyof Register
+  ) => {
+    setCredentials({
+      ...credentials,
+      [field]: e.target.value,
+    });
+  };
+
   return (
     <div className="w-screen h-screen bg-slate-300 flex flex-col justify-center items-center">
       <form
@@ -62,39 +72,25 @@ function Register() {
             <label className="font-semibold">Name</label>
             <input
               className="w-full h-10 p-3 text-slate-700 border"
-              onChange={(e: any) =>
-                setCredentials({
-                  name: e.target.value,
-                  email: credentials.email,
-                  password: credentials.password,
-                })
-              }
+              value={credentials.name}
+              onChange={(e) => handleInputChange(e, "name")}
             />
           </div>
           <div className="flex flex-col space-y-3">
             <label className="font-semibold">Email</label>
             <input
               className="w-full h-10 p-3 text-slate-700 border"
-              onChange={(e: any) =>
-                setCredentials({
-                  name: credentials.name,
-                  email: e.target.value,
-                  password: credentials.password,
-                })
-              }
+              value={credentials.email}
+              onChange={(e) => handleInputChange(e, "email")}
             />
           </div>
           <div className="flex flex-col space-y-3">
             <label className="font-semibold">Password</label>
             <input
               className="w-full h-10 p-3 text-slate-700 border"
-              onChange={(e: any) =>
-                setCredentials({
-                  name: credentials.name,
-                  email: credentials.email,
-                  password: e.target.value,
-                })
-              }
+              type="password"
+              value={credentials.password}
+              onChange={(e) => handleInputChange(e, "password")}
             />
           </div>
           <button
