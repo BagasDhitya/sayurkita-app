@@ -1,6 +1,7 @@
-import axios from "axios";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import axios from "axios";
 
 import { ProductData, productSchema } from "@/utils/schema";
 
@@ -8,17 +9,27 @@ function CreateProduct() {
   const {
     register,
     handleSubmit,
-    control,
     setValue,
     formState: { errors },
   } = useForm<ProductData>({
     resolver: zodResolver(productSchema),
   });
+  const [emails, setEmails] = useState<string[]>([""]);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "email",
-  });
+  const handleEmailChange = (index: number, value: string) => {
+    const newEmails = [...emails];
+    newEmails[index] = value;
+    setEmails(newEmails);
+  };
+
+  const handleAddEmail = () => {
+    setEmails([...emails, ""]);
+  };
+
+  const handleRemoveEmail = (index: number) => {
+    const newEmails = emails.filter((_, i) => i !== index);
+    setEmails(newEmails);
+  };
 
   async function onSubmit(data: ProductData) {
     const formData = new FormData();
@@ -27,17 +38,18 @@ function CreateProduct() {
     formData.append("description", data.description || "");
     formData.append("stock", String(Number(data.stock)));
     formData.append("category", data.category);
-    data.email.forEach((email: any) => formData.append("email", email));
+
+    emails.forEach((email) => formData.append("email", email));
+
     if (data.image instanceof File) {
       formData.append("image", data.image);
     }
 
-    // ngirim ke admin product
     try {
       const response = await axios.post("/api/admin/products", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzMwMjc0NzA3LCJleHAiOjE3MzAyNzgzMDd9.ZfzZFnN46Q7-d7w8V2Ko7IxAVRN23ljzTaUcyrTkV5I`,
+          Authorization: `Bearer YOUR_TOKEN_HERE`,
         },
       });
       console.log("success : ", response.data);
@@ -56,7 +68,6 @@ function CreateProduct() {
           Create Product
         </h2>
 
-        {/* komponen untuk input name produk*/}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="name">
             Name
@@ -73,7 +84,6 @@ function CreateProduct() {
           )}
         </div>
 
-        {/* komponen untuk input price produk*/}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="price">
             Price
@@ -90,7 +100,6 @@ function CreateProduct() {
           )}
         </div>
 
-        {/* komponen untuk input description produk*/}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="description">
             Description
@@ -101,7 +110,6 @@ function CreateProduct() {
           />
         </div>
 
-        {/* komponen untuk input stock produk*/}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="stock">
             Stock
@@ -118,7 +126,6 @@ function CreateProduct() {
           )}
         </div>
 
-        {/* komponen untuk input category produk*/}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="category">
             Category
@@ -135,44 +142,39 @@ function CreateProduct() {
           )}
         </div>
 
-        {/* komponen untuk dynamic input email user*/}
         <div className="mb-4">
           <label className="block mb-2">Email</label>
-          {/* mapping komponen input sesuai keinginan admin akan memberikan pemberitahuan ke siapa saja*/}
-          {fields?.map((field: any, index: any) => (
-            <div key={field.id} className="flex items-center mb-2">
-              {/* komponen input untuk menambahkan field input email user*/}
+          {emails.map((email, index) => (
+            <div key={index} className="flex items-center mb-2">
               <input
                 type="text"
-                {...register(`email.${index}`)}
+                value={email}
+                onChange={(e) => handleEmailChange(index, e.target.value)}
                 className={`flex-1 p-2 border ${
-                  errors.email ? "border-red-500" : "border-gray-300"
+                  errors.email?.[index] ? "border-red-500" : "border-gray-300"
                 }`}
               />
-
-              {/* komponen button untuk remove field input email user*/}
               <button
                 type="button"
-                onClick={() => remove(index)}
+                onClick={() => handleRemoveEmail(index)}
                 className="ml-2 text-red-500"
               >
                 Remove
               </button>
-              {errors.email && errors.email[index] && (
+              {errors.email?.[index] && (
                 <p className="text-red-500">{errors.email[index]?.message}</p>
               )}
             </div>
           ))}
           <button
             type="button"
-            onClick={() => append("")}
+            onClick={handleAddEmail}
             className="mt-2 text-blue-500"
           >
             Add Email
           </button>
         </div>
 
-        {/* komponen untuk input image produk */}
         <div className="mb-4">
           <label className="block mb-2" htmlFor="image">
             Image
@@ -194,7 +196,6 @@ function CreateProduct() {
           )}
         </div>
 
-        {/* button untuk submit */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
